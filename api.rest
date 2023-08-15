@@ -1,0 +1,19 @@
+@url = 147.139.210.135 
+@port = 5432
+### 
+GET {{url}}:{{port}} 
+### 
+GET {{url}}:{{port}}/recipe
+### 
+DELETE {{url}}:{{port}}/recipe/1
+### 
+POST {{url}}:{{port}}/recipe
+Content-Type: application/x-www-form-urlencoded
+
+###
+PATCH {{url}}:{{port}}/products/3 Content-Type: application/json
+
+{
+"name" : "eraser", "price" : 1500
+}
+DELETE {{url}}:{{port}}/products/4
