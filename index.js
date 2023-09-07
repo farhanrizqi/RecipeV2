@@ -20,9 +20,9 @@ app.use(xss);
 app.use(router);
 
 app.get("/", (req, res) => {
-  res.send("Recipe API");
+  res.status(200).json({ status: 200, message: "Server is Runnin.." });
 });
 
-app.listen(port, (res) => {
-  res.send(`This app is listening on ${port}`);
+app.listen(port, () => {
+  console.log(`This app is listening on ${port}`);
 });
