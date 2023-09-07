@@ -23,6 +23,6 @@ app.get("/", (req, res) => {
   res.send("Recipe API");
 });
 
-app.listen(port, () => {
+app.listen(port, (res) => {
   res.send(`This app is listening on ${port}`);
 });
