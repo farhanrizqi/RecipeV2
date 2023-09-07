@@ -1,5 +1,5 @@
-const app = require("express");
-const router = app.Router();
+const express = require("express");
+const router = express.Router();
 const recipe = require("./recipe");
 const category = require("./category");
 const users = require("./users");

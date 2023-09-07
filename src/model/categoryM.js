@@ -1,15 +1,18 @@
 const Pool = require("../config/db");
 
 const getCategory = async () => {
-  console.log("model getCategory");
-  return new Promise((resolve, reject) =>
-    Pool.query(`SELECT * FROM category`, (err, result) => {
+  return new Promise((resolve, reject) => {
+    console.log("Model Get Category");
+    Pool.query(`SELECT * FROM category`, (err, results) => {
       if (!err) {
-        resolve(result);
+        resolve(results);
       } else {
         reject(err);
       }
-    })
-  );
+    });
+  });
 };
-module.exports = { getCategory };
+
+module.exports = {
+  getCategory,
+};

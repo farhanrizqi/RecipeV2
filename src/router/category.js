@@ -1,6 +1,6 @@
 const { getData } = require("../controller/categoryC");
-const express = require("express");
-const router = express.Router();
+const app = require("express");
+const router = app.Router();
 
 router.get("/", getData);
 

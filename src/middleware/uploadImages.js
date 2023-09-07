@@ -3,19 +3,23 @@ const multer = require("multer");
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ".png");
+    const fileExt = file.originalname.split(".").pop(); // Mendapatkan ekstensi file
+    cb(null, file.fieldname + "-" + uniqueSuffix + "." + fileExt);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1 * 1024 * 1024 },
+  limits: { fileSize: 1 * 1024 * 1024 }, // Batasan ukuran file
   fileFilter: (req, file, cb) => {
+    const allowedMimes = ["image/png", "image/jpg", "image/jpeg", "image/jfif"];
+    const fileExt = file.originalname.split(".").pop().toLowerCase(); // Mendapatkan ekstensi file
     if (
-      file.mimetype === "image/png" ||
-      file.mimetype === "image/jpg" ||
-      file.mimetype === "image/jpeg" ||
-      file.mimetype === "image.jfif"
+      allowedMimes.includes(file.mimetype) &&
+      (fileExt === "png" ||
+        fileExt === "jpg" ||
+        fileExt === "jpeg" ||
+        fileExt === "jfif")
     ) {
       cb(null, true);
       req.isFileValid = true;

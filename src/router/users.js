@@ -1,20 +1,21 @@
 const {
-  getData,
-  getSpecData,
-  putData,
+  showUsersOnly,
+  registerUsers,
   login,
-  regis,
+  delUsersByIdOnly,
+  showUsersById,
+  putUsersByIdOnly,
 } = require("../controller/usersC");
-const express = require("express");
-const router = express.Router();
-const upload = require("./../middleware/uploadImages");
-// const xss = require("xss-clean");
-const validateImage = require("./../middleware/validateImages");
+const app = require("express");
+const router = app.Router();
+const { protect } = require("../middleware/jwt");
+const upload = require("../middleware/uploadImages");
 
-router.get("/", getData);
-router.get("/spc", getSpecData);
-router.post("/regis", validateImage, upload.single("photos"), regis);
+router.get("/", protect, showUsersOnly);
+router.post("/regis", upload.single("photos"), registerUsers);
 router.post("/login", login);
-router.put("/:id", validateImage, upload.single("photos"), putData);
+router.delete("/:id", protect, delUsersByIdOnly);
+router.get("/:id", showUsersById);
+router.put("/:id", protect, upload.single("photos"), putUsersByIdOnly);
 
 module.exports = router;

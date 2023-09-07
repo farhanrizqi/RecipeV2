@@ -1,216 +1,278 @@
 const {
   getUsers,
-  getUserById,
-  getSearchUsers,
-  getSortUsers,
-  getUserByEmail,
-  createUser,
-  putUsers,
+  getUsersByEmail,
+  regis,
+  delUserById,
+  putUsersById,
+  getUsersById,
 } = require("../model/usersM");
-const argon2 = require("argon2");
+const { responseHandler } = require("../helpers/responseHandler");
+const { hashPassword } = require("../middleware/argon2");
+const { generateToken } = require("../middleware/jwt");
 const cloudinary = require("../config/photos");
-const { GenerateToken } = require("./../helpers/generateToken");
 
 const usersController = {
-  getData: async (req, res, next) => {
-    let data = await getUsers();
-    console.log(data);
-    if (data) {
-      return res
-        .status(200)
-        .json({ status: 200, message: "GET data success", data: data.rows });
+  showUsersOnly: async (req, res) => {
+    console.log("Control: Running get users");
+    try {
+      let users_roles = req.payload.role;
+      console.log(users_roles);
+      if (users_roles != "admin") {
+        return res
+          .status(405)
+          .json(
+            responseHandler(`Couldn't access this data, Not Authorize`, 405)
+          );
+      }
+      const result = await getUsers();
+      if (result.rowCount > 0) {
+        console.log(result.rows);
+        return res.status(200).json(responseHandler(result.rows, "Success"));
+      } else {
+        console.log("Data tidak ditemukan");
+        return res
+          .status(404)
+          .json(responseHandler(`Couldn't find the data`, 404));
+      }
+    } catch (error) {
+      console.error(`Error : ${error.message}`);
+      return res.status(500).json(responseHandler(`Something's wrong`, 500));
     }
   },
+  registerUsers: async (req, res) => {
+    console.log("Control: Running register users");
+    try {
+      const { name, email, pass, role } = req.body;
+      if (!name || !email || !pass) {
+        return res
+          .status(404)
+          .json(
+            responseHandler("Name, Email, and Password must be filled", 404)
+          );
+      }
 
-  putData: async (req, res, next) => {
-    const { id } = req.params;
-    const { name, email, pass, role } = req.body;
+      let user = await getUsersByEmail(email);
+      if (user.rows[0]) {
+        return res
+          .status(404)
+          .json(responseHandler("Email have been used, try other email!", 404));
+      }
+      let post = {
+        name: name,
+        email: email,
+        pass: await hashPassword(pass),
+        // photos: photos || 'default.png',
+        role: role || "users",
+      };
 
-    if (!id || id <= 0 || isNaN(id)) {
-      return res.status(404).json({ message: "ID not found" });
+      if (req.file) {
+        const result_up = await cloudinary.uploader.upload(req.file.path, {
+          folder: "users",
+        });
+        console.log(result_up);
+
+        post.photos = result_up.secure_url;
+        post.public_id = result_up.public_id;
+      } else {
+        post.photos =
+          "https://res.cloudinary.com/ddrecezrk/image/upload/v1693996090/users/no-users.png";
+        post.public_id = "no-users";
+      }
+
+      const result = await regis(post);
+      if (result.rowCount > 0) {
+        console.log(result.rows);
+        return res
+          .status(200)
+          .json(responseHandler(result.rowCount, "Registration success!"));
+      }
+    } catch (error) {
+      console.error(error.message);
+      return res.status(500).json(responseHandler("Registration error", 500));
     }
+  },
+  login: async (req, res) => {
+    try {
+      let { email, pass } = req.body;
+      console.log(email, pass);
 
-    let idData = await getUserById(id);
-    const hash = await argon2.hash(pass);
+      if (!email || !pass) {
+        return res
+          .status(404)
+          .json(responseHandler("Email and Password must be filled", 404));
+      }
 
-    if (req.file) {
-      // Delete the old image from Cloudinary
-      if (idData.rows[0].photos) {
-        const public_id = idData.rows[0].photos.split("/").pop().split(".")[0];
+      let data = await getUsersByEmail(email);
+      // console.log(data.rows[0])
+
+      if (!data.rows[0]) {
+        return res
+          .status(404)
+          .json(responseHandler("Email not registered", 404));
+      }
+
+      let users = data.rows[0];
+      console.log(users);
+      const isPasswordMatch = await hashPassword(pass, users.pass);
+      if (isPasswordMatch) {
+        delete users.pass;
+        const token = generateToken(users);
+        users.token = token;
+        return res
+          .status(200)
+          .json(
+            responseHandler(
+              { user: users, message: "This is your token" },
+              "Login success!",
+              token
+            )
+          );
+      } else {
+        return res.status(404).json(responseHandler("Incorrect", 404));
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json(responseHandler("error get token", 500));
+    }
+  },
+  delUsersByIdOnly: async (req, res) => {
+    console.log("Control: Running delete users");
+    try {
+      const { id } = req.params;
+      let users_role = req.payload.role;
+      if (users_role !== "admin") {
+        return res
+          .status(404)
+          .json(
+            responseHandler(`Couldn't access this data, Not Authorize`, 404)
+          );
+      }
+      const userData = await getUsersById(id);
+      if (!userData.rows[0]) {
+        return res
+          .status(404)
+          .json(responseHandler(`Couldn't find the data`, 404));
+      }
+
+      if (userData.rows[0].photos) {
+        const public_id = userData.rows[0].photos
+          .split("/")
+          .pop()
+          .split(".")[0];
         await cloudinary.uploader.destroy(public_id);
       }
-    }
 
-    // Upload the new image to Cloudinary
-    const ImageCloud = await cloudinary.uploader.upload(req.file.path, {
-      folder: "users",
-    });
-
-    if (!ImageCloud) {
-      return res.status(404).json({ message: "Upload image failed" });
-    }
-
-    console.log("Update data");
-    console.log(idData.rows[0]);
-
-    let data = {
-      name: name || idData.rows[0].name,
-      email: email || idData.rows[0].email,
-      pass: hash || idData.rows[0].pass,
-      role: role || idData.rows[0].role,
-      photos: ImageCloud.secure_url || idData.rows[0].photos,
-      created_at: idData.rows[0].created_at,
-    };
-
-    let result = await putUsers(data, parseInt(id));
-    console.log(result);
-
-    return res
-      .status(200)
-      .json({ status: 200, message: "Update data users success", data });
-  },
-
-  getSpecData: async (req, res, next) => {
-    try {
-      const { search, searchBy, limit, order } = req.query;
-
-      let page = req.query.page || 1;
-      let limiter = limit || 5;
-
-      data = {
-        search: search || "",
-        searchBy: searchBy || "title",
-        offset: (page - 1) * limiter,
-        limit: limit || 5,
-        order: order || "ASC" || "DESC",
-      };
-      let searchData = await getSearchUsers(data);
-      let countData = await getSortUsers(data);
-
-      let pagination = {
-        totalPage: Math.ceil(countData.rows[0].count / limiter),
-        totalData: parseInt(countData.rows[0].count),
-        pageNow: parseInt(page),
-      };
-
-      console.log("dataRecipe");
-      console.log(searchData);
-      console.log("Total Data");
-      console.log(countData.rows[0].count);
-
-      if (searchData.rows.length > 0) {
-        res.status(200).json({
-          status: 200,
-          message: "Get data success",
-          data: searchData.rows,
-          pagination,
-        });
+      const result = await delUserById(id);
+      if (result.rowCount > 0) {
+        console.log(result.rows);
+        return res.status(200).json(responseHandler(result.rows, "Success"));
       } else {
-        res.status(200).json({
-          status: 200,
-          message: "No data found",
-          data: [],
-          pagination,
-        });
-      }
-    } catch (e) {
-      res.status(404).json({ message: e.message });
-    }
-  },
-
-  regis: async (req, res, next) => {
-    let { name, email, pass, role } = req.body;
-    role = role || "users";
-    if (!req.isFileValid) {
-      return res.status(400).json({ message: req.isFileValidMessage });
-    }
-
-    try {
-      const ImageCloud = await cloudinary.uploader.upload(req.file.path, {
-        folder: "users",
-      });
-
-      if (!ImageCloud) {
-        return res.status(404).json({ message: "Failed to upload image" });
-      }
-
-      if (!name || !email || !pass) {
-        return res.status(404).json({
-          status: 404,
-          message: "Please fill email, passwords, and name correctly.",
-        });
-      }
-
-      let user = await getUserByEmail(email);
-
-      if (user.rows[0]) {
-        return res.status(404).json({
-          status: 404,
-          message: "This is email address already in use",
-        });
-      }
-
-      hash = await argon2.hash(pass);
-      let dataUser = {
-        name,
-        email,
-        pass: hash,
-        role,
-        photos: ImageCloud.secure_url,
-        public_id: ImageCloud.public_id,
-      };
-      console.log(dataUser);
-      // Save data to the database
-      let result = await createUser(dataUser);
-
-      if (result.rowCount !== 1) {
+        console.log("Data tidak ditemukan");
         return res
-          .status(400)
-          .json({ status: 400, message: "Registration failed" });
+          .status(404)
+          .json(responseHandler(`Couldn't find the data`, 404));
       }
-
-      return res
-        .status(200)
-        .json({ status: 200, message: "Registration success" });
     } catch (error) {
-      console.error("Error:", error);
-      return res
-        .status(500)
-        .json({ status: 500, message: "Internal Server Error" });
+      console.error(`Error : ${error.message}`);
+      return res.status(500).json(responseHandler(`Something's wrong`, 500));
     }
   },
-  login: async (req, res, next) => {
-    let { email, pass } = req.body;
-    console.log(email, pass);
-
-    if (!email || !pass) {
-      return res.status(404).json({
-        status: 404,
-        message: "Wrong email or password.",
-      });
+  showUsersById: async (req, res) => {
+    console.log("Control: Running get users by id");
+    try {
+      const { id } = req.params;
+      const result = await getUsersById(id);
+      if (result.rowCount > 0) {
+        console.log(result.rows);
+        return res.status(200).json(responseHandler(result.rows, "Success"));
+      } else {
+        console.log("Data tidak ditemukan");
+        return res
+          .status(404)
+          .json(responseHandler(`Couldn't find the data`, 404));
+      }
+    } catch (error) {
+      console.error(`Error : ${error.message}`);
+      return res.status(500).json(responseHandler(`Something's wrong`, 500));
     }
+  },
+  putUsersByIdOnly: async (req, res) => {
+    console.log("Control: Running put users by id");
+    try {
+      const { id } = req.params;
+      const { name, email, pass, role } = req.body;
 
-    let data = await getUserByEmail(email);
-    console.log(data.rows[0]);
+      let dataUsers = await getUsersById(id);
+      let result_up = null;
 
-    if (!data.rows[0]) {
-      return res
-        .status(404)
-        .json({ status: 404, message: "Email hasn't been registered" });
+      const fileExt = req.file
+        ? req.file.originalname.split(".").pop().toLowerCase()
+        : null;
+
+      if (req.file) {
+        // Jika req.file ada dan ekstensi file valid, upload gambar baru dan hapus gambar lama
+        if (
+          fileExt &&
+          (fileExt === "png" ||
+            fileExt === "jpg" ||
+            fileExt === "jpeg" ||
+            fileExt === "jfif")
+        ) {
+          result_up = await cloudinary.uploader.upload(req.file.path, {
+            folder: "users",
+          });
+          await cloudinary.uploader.destroy(dataUsers.rows[0].public_id);
+        } else {
+          // Jika ekstensi file tidak valid, kirim respons JSON yang sesuai
+          return res.status(400).json({ message: "Invalid image file format" });
+        }
+      }
+
+      let post = {
+        id: id,
+        name: name,
+        email: email,
+        pass: await hashPassword(pass),
+        role: role,
+      };
+
+      if (result_up) {
+        // Jika gambar baru diupload, update properti image
+        post.photos = result_up.secure_url;
+        post.public_id = result_up.public_id;
+      } else {
+        // Jika tidak ada gambar baru diupload, ambil gambar yang masih ada
+        post.photos = dataUsers.rows[0].photos;
+        post.public_id = dataUsers.rows[0].public_id;
+      }
+
+      let users_id = req.payload.id;
+
+      // console.log(dataRecipe.rows[0].users_id)
+      // console.log(users_id)
+
+      if (users_id != dataUsers.rows[0].id) {
+        return res
+          .status(404)
+          .json(
+            responseHandler(`Couldn't access this data, Not Authorize`, 404)
+          );
+      }
+
+      const result = await putUsersById(post);
+      if (result.rowCount > 0) {
+        console.log(result.rows);
+        return res.status(200).json(responseHandler(result.rows, "Success"));
+      } else {
+        console.log(`Couldn't find the data`);
+        return res
+          .status(404)
+          .json(responseHandler(`Couldn't find the data`, 404));
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json(responseHandler(`Something's wrong`, 500));
     }
-
-    let users = data.rows[0];
-    console.log("users.pass");
-    console.log(users.pass);
-    let verify = await argon2.verify(users.pass, pass);
-    if (!verify) {
-      return res.status(404).json({ status: 404, message: "Wrong password" });
-    }
-    delete users.pass;
-    let token = GenerateToken(users);
-    users.token = token;
-
-    res.status(200).json({ status: 200, message: "GET data success", users });
   },
 };
 

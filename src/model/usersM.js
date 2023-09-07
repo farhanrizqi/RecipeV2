@@ -1,10 +1,11 @@
-const Pool = require("../config/db");
+const pool = require("../config/db");
 
-const getUsers = () => {
+const getUsers = async () => {
   return new Promise((resolve, reject) => {
-    Pool.query("SELECT * FROM users;", (err, res) => {
+    console.log("Model: Get users");
+    pool.query(`SELECT * FROM users`, (err, results) => {
       if (!err) {
-        resolve(res);
+        resolve(results);
       } else {
         reject(err);
       }
@@ -12,38 +13,14 @@ const getUsers = () => {
   });
 };
 
-const getUserById = (id) => {
+const getUsersByEmail = async (email) => {
   return new Promise((resolve, reject) => {
-    Pool.query(`SELECT * FROM users WHERE id = ${id}`, (err, res) => {
-      if (!err) {
-        resolve(res);
-      } else {
-        reject(err);
-      }
-    });
-  });
-};
-
-const getUserByEmail = async (email) => {
-  console.log("model getUserByEmail");
-  return new Promise((resolve, reject) =>
-    Pool.query(`SELECT * FROM users WHERE email='${email}'`, (err, result) => {
-      if (!err) {
-        resolve(result);
-      } else {
-        reject(err);
-      }
-    })
-  );
-};
-const getSearchUsers = (data) => {
-  const { search, searchBy, offset, limit, order } = data;
-  return new Promise((resolve, reject) => {
-    Pool.query(
-      `SELECT * FROM users WHERE ${searchBy} ILIKE '%${search}%' ORDER BY id ${order} OFFSET ${offset} LIMIT ${limit} `,
-      (err, res) => {
+    console.log("Model: Get users by email");
+    pool.query(
+      `SELECT * FROM users WHERE email = '${email}'`,
+      (err, results) => {
         if (!err) {
-          resolve(res);
+          resolve(results);
         } else {
           reject(err);
         }
@@ -52,19 +29,15 @@ const getSearchUsers = (data) => {
   });
 };
 
-const getSortUsers = (data) => {
-  const { search, searchBy } = data;
+const regis = async (post) => {
   return new Promise((resolve, reject) => {
-    Pool.query(
-      `SELECT COUNT(*)
-FROM (
-        SELECT users.id
-        FROM users
-        WHERE ${searchBy} ILIKE '%${search}%'
-    ) AS queryData`,
-      (err, res) => {
+    console.log("Model: Post/regis users");
+    const { name, email, pass, photos, role, public_id } = post;
+    pool.query(
+      `INSERT INTO users (name, email, pass, photos, role, public_id) VALUES ('${name}', '${email}', '${pass}','${photos}', '${role}', '${public_id}') RETURNING *`,
+      (err, results) => {
         if (!err) {
-          resolve(res);
+          resolve(results);
         } else {
           reject(err);
         }
@@ -73,54 +46,57 @@ FROM (
   });
 };
 
-const createUser = async (data) => {
-  let { name, email, pass, role, photos, public_id } = data;
-  console.log("model createUser");
-  return new Promise((resolve, reject) =>
-    Pool.query(
-      `INSERT INTO users (name, email, pass, role, photos, public_id, created_at) VALUES('${name}','${email}','${pass}', '${role}','${photos}', '${public_id}', NOW())`,
-      (err, result) => {
+const delUserById = async (id) => {
+  return new Promise((resolve, reject) => {
+    console.log("Model: Delete users");
+    pool.query(
+      `DELETE FROM users WHERE id = ${id} RETURNING *`,
+      (err, results) => {
         if (!err) {
-          resolve(result);
+          resolve(results);
         } else {
           reject(err);
         }
       }
-    )
-  );
+    );
+  });
 };
 
-const putUsers = async (data, id) => {
-  const { name, email, pass, role, photos, public_id } = data;
-  if (pass) {
-    try {
-      const res = Pool.query(
-        `UPDATE users SET name = $1, email = $2, pass = $3, role = $4, photos = $5, public_id = $6, updated_at = NOW()  WHERE id = $7`,
-        [name, email, pass, role, photos, public_id, id]
-      );
-      return res;
-    } catch (e) {
-      throw e;
-    }
-  } else {
-    try {
-      const res = Pool.query(
-        `UPDATE users SET name = $1, email = $2, photo = $3, updated_at = $4 WHERE id = $5`,
-        [name, email, role, photos, updated_at, id]
-      );
-      return res;
-    } catch (e) {
-      return e;
-    }
-  }
+const putUsersById = async (post) => {
+  return new Promise((resolve, reject) => {
+    console.log("Model: Put users");
+    const { name, email, photos, pass, public_id, id } = post;
+    pool.query(
+      `UPDATE users SET name = '${name}', email = '${email}', photos = '${photos}', pass = '${pass}', public_id = '${public_id}' WHERE id = ${id} RETURNING *`,
+      (err, results) => {
+        if (!err) {
+          resolve(results);
+        } else {
+          reject(err);
+        }
+      }
+    );
+  });
+};
+
+const getUsersById = async (id) => {
+  return new Promise((resolve, reject) => {
+    console.log("Model: Get users by ID");
+    pool.query(`SELECT * FROM users WHERE id = ${id}`, (err, results) => {
+      if (!err) {
+        resolve(results);
+      } else {
+        reject(err);
+      }
+    });
+  });
 };
 
 module.exports = {
   getUsers,
-  getUserById,
-  getSearchUsers,
-  getSortUsers,
-  getUserByEmail,
-  createUser,
-  putUsers,
+  getUsersByEmail,
+  regis,
+  delUserById,
+  getUsersById,
+  putUsersById,
 };
