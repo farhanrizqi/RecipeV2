@@ -21,22 +21,30 @@ const usersController = {
         return res
           .status(405)
           .json(
-            responseHandler(`Couldn't access this data, Not Authorize`, 405)
+            responseHandler(
+              false,
+              null,
+              `Couldn't access this data, Not Authorized`,
+              405
+            )
           );
       }
       const result = await getUsers();
       if (result.rowCount > 0) {
-        console.log(result.rows);
-        return res.status(200).json(responseHandler(result.rows, "Success"));
+        return res
+          .status(200)
+          .json(responseHandler(true, result.rows, "Success"));
       } else {
         console.log("Data tidak ditemukan");
         return res
           .status(404)
-          .json(responseHandler(`Couldn't find the data`, 404));
+          .json(responseHandler(false, null, `Couldn't find the data`, 404));
       }
     } catch (error) {
       console.error(`Error : ${error.message}`);
-      return res.status(500).json(responseHandler(`Something's wrong`, 500));
+      return res
+        .status(500)
+        .json(responseHandler(false, null, `Something's wrong`, 500));
     }
   },
   registerUsers: async (req, res) => {
@@ -84,7 +92,7 @@ const usersController = {
         console.log(result.rows);
         return res
           .status(200)
-          .json(responseHandler(result.rowCount, "Registration success!"));
+          .json(responseHandler(true, result.rows, "Registration success!"));
       }
     } catch (error) {
       console.error(error.message);
@@ -118,15 +126,13 @@ const usersController = {
         delete users.pass;
         const token = generateToken(users);
         users.token = token;
-        return res
-          .status(200)
-          .json(
-            responseHandler(
-              { user: users, message: "This is your token" },
-              "Login success!",
-              token
-            )
-          );
+        return res.status(200).json(
+          responseHandler(true, {
+            user: users,
+            message: "Login success!",
+            token: token,
+          })
+        );
       } else {
         return res.status(404).json(responseHandler("Incorrect", 404));
       }
@@ -142,16 +148,21 @@ const usersController = {
       let users_role = req.payload.role;
       if (users_role !== "admin") {
         return res
-          .status(404)
+          .status(403) // Ubah status kode ke 403 (Not Authorized)
           .json(
-            responseHandler(`Couldn't access this data, Not Authorize`, 404)
+            responseHandler(
+              `You are not authorized to access this data.`, // Pesan yang lebih jelas
+              403
+            )
           );
       }
       const userData = await getUsersById(id);
       if (!userData.rows[0]) {
         return res
           .status(404)
-          .json(responseHandler(`Couldn't find the data`, 404));
+          .json(
+            responseHandler(`The data you requested could not be found.`, 404)
+          );
       }
 
       if (userData.rows[0].photos) {
@@ -170,11 +181,20 @@ const usersController = {
         console.log("Data tidak ditemukan");
         return res
           .status(404)
-          .json(responseHandler(`Couldn't find the data`, 404));
+          .json(
+            responseHandler(`The data you requested could not be found.`, 404)
+          );
       }
     } catch (error) {
       console.error(`Error : ${error.message}`);
-      return res.status(500).json(responseHandler(`Something's wrong`, 500));
+      return res
+        .status(500)
+        .json(
+          responseHandler(
+            `An internal server error occurred. Please try again later.`,
+            500
+          )
+        );
     }
   },
   showUsersById: async (req, res) => {
@@ -183,8 +203,13 @@ const usersController = {
       const { id } = req.params;
       const result = await getUsersById(id);
       if (result.rowCount > 0) {
-        console.log(result.rows);
-        return res.status(200).json(responseHandler(result.rows, "Success"));
+        // Ubah respons untuk mengirimkan objek data pengguna
+        return res.status(200).json(
+          responseHandler(true, {
+            user: result.rows[0], // Mengirim data pengguna dalam objek "user"
+            message: "Success",
+          })
+        );
       } else {
         console.log("Data tidak ditemukan");
         return res
@@ -231,7 +256,7 @@ const usersController = {
       let post = {
         id: id,
         name: name,
-        email: email,
+        email: email ? email : dataUsers.rows[0].email,
         pass: await hashPassword(pass),
         role: role,
       };
@@ -248,30 +273,44 @@ const usersController = {
 
       let users_id = req.payload.id;
 
-      // console.log(dataRecipe.rows[0].users_id)
-      // console.log(users_id)
-
       if (users_id != dataUsers.rows[0].id) {
         return res
-          .status(404)
+          .status(403)
           .json(
-            responseHandler(`Couldn't access this data, Not Authorize`, 404)
+            responseHandler(`You are not authorized to access this data.`, 403)
           );
       }
 
       const result = await putUsersById(post);
+      res.setHeader("Content-Type", "application/json"); // Set header Content-Type ke application/json
       if (result.rowCount > 0) {
-        console.log(result.rows);
-        return res.status(200).json(responseHandler(result.rows, "Success"));
+        console.log("Data yang akan direspons:", result.rows);
+        return res
+          .status(200)
+          .json(responseHandler(true, result.rows, "Success"));
       } else {
         console.log(`Couldn't find the data`);
         return res
           .status(404)
-          .json(responseHandler(`Couldn't find the data`, 404));
+          .json(
+            responseHandler(
+              false,
+              `The data you requested could not be found.`,
+              404
+            )
+          );
       }
     } catch (error) {
       console.error(error);
-      return res.status(500).json(responseHandler(`Something's wrong`, 500));
+      res.setHeader("Content-Type", "application/json"); // Set header Content-Type ke application/json
+      return res
+        .status(500)
+        .json(
+          responseHandler(
+            `An internal server error occurred. Please try again later.`,
+            500
+          )
+        );
     }
   },
 };
