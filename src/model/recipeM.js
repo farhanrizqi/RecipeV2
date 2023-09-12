@@ -17,7 +17,7 @@ const getRecipeById = async (id) => {
   return new Promise((resolve, reject) => {
     console.log("Model: Get recipe by ID");
     Pool.query(
-      `SELECT recipe.users_id, recipe.title, recipe.img, recipe.ingredients, recipe.public_id, recipe.created_at, recipe.category_id, category.name AS category, users.name FROM recipe JOIN category ON recipe.category_id = category.id JOIN users ON recipe.users_id = users.id WHERE recipe.id = ${id}`,
+      `SELECT recipe.users_id, recipe.title, recipe.img, recipe.ingredients, recipe.public_id, recipe.created_at, recipe.category_id, category.name AS category, users.name AS author FROM recipe JOIN category ON recipe.category_id = category.id JOIN users ON recipe.users_id = users.id WHERE recipe.id = ${id}`,
       (err, results) => {
         if (!err) {
           resolve(results);
@@ -137,7 +137,7 @@ const getRecipeByUser = async (id) => {
   return new Promise((resolve, reject) => {
     console.log("Model: Get recipe by ID");
     Pool.query(
-      `SELECT recipe.title, recipe.img, recipe.ingredients, recipe.public_id, recipe.created_at, category.name AS category, users.name FROM recipe JOIN category ON recipe.category_id = category.id JOIN users ON recipe.users_id = users.id WHERE recipe.users_id = ${id}`,
+      `SELECT recipe.title, recipe.img, recipe.ingredients, recipe.public_id, recipe.created_at, category.name AS category, users.name AS author FROM recipe JOIN category ON recipe.category_id = category.id JOIN users ON recipe.users_id = users.id WHERE recipe.users_id = ${id}`,
       (err, results) => {
         if (!err) {
           resolve(results);
