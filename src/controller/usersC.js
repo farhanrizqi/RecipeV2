@@ -138,7 +138,9 @@ const usersController = {
       }
     } catch (error) {
       console.error(error);
-      res.status(500).json(responseHandler("error get token", 500));
+      res
+        .status(500)
+        .json(responseHandler("Error when getting the token", 500));
     }
   },
   delUsersByIdOnly: async (req, res) => {
