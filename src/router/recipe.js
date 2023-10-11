@@ -54,7 +54,7 @@ router.post("/", protect, upload.single("img"), postRecipe);
 router.put("/:id", protect, upload.single("img"), putRecipe);
 router.delete("/:id", protect, deleteRecipe);
 router.get("/id/:id", showRecipeById);
-router.get("/user/:id", showRecipeByUser);
+router.get("/users/:id", showRecipeByUsers);
 router.get("/spc", sortRecipe);
 
 module.exports = router;
