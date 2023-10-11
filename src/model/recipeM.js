@@ -7,8 +7,8 @@ const getRecipe = async () => {
       `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.img, category.name AS category, users.name AS author, users.photos AS author_photos, recipe.created_at
     FROM recipe
     JOIN category ON recipe.category_id = category.id
-    JOIN users us ON re.users_id = us.id
-    ORDER BY re.id DESC;`,
+    JOIN users us ON recipe.users_id = users.id
+    ORDER BY recipe.id DESC;`,
       (err, results) => {
         if (!err) {
           resolve(results);
