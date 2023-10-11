@@ -3,13 +3,20 @@ const Pool = require("../config/db");
 const getRecipe = async () => {
   return new Promise((resolve, reject) => {
     console.log("Model: Get recipe");
-    Pool.query(`SELECT * FROM recipe`, (err, results) => {
-      if (!err) {
-        resolve(results);
-      } else {
-        reject(err);
+    Pool.query(
+      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.img, category.name AS category, users.name AS author, users.photos AS author_photos, recipe.created_at
+    FROM recipe
+    JOIN category ON recipe.category_id = category.id
+    JOIN users us ON re.users_id = us.id
+    ORDER BY re.id DESC;`,
+      (err, results) => {
+        if (!err) {
+          resolve(results);
+        } else {
+          reject(err);
+        }
       }
-    });
+    );
   });
 };
 
