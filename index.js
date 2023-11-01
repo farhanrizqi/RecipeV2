@@ -12,6 +12,8 @@ require("dotenv").config();
 // app use
 const corsOptions = {
   origin: "*",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Atur metode yang diizinkan
+  credentials: true,
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));

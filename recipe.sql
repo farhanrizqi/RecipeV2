@@ -192,3 +192,4 @@ FROM recipe
     JOIN category ON recipe.category_id = category.id
     JOIN users ON recipe.users_id = users.id
 ORDER BY recipe.id;
+

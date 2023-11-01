@@ -227,9 +227,10 @@ const usersController = {
     console.log("Control: Running put users by id");
     try {
       const { id } = req.params;
-      const { name, email, pass, role } = req.body;
+      const { name, email, pass } = req.body;
 
       let dataUsers = await getUsersById(id);
+      console.log(dataUsers);
       let result_up = null;
 
       const fileExt = req.file
@@ -256,11 +257,12 @@ const usersController = {
       }
 
       let post = {
-        id: id,
-        name: name,
-        email: email ? email : dataUsers.rows[0].email,
-        pass: await hashPassword(pass),
-        role: role,
+        id,
+        name: name || dataUsers.rows[0].name,
+        email: email || dataUsers.rows[0].email,
+        pass: pass || dataUsers.rows[0].pass,
+        photos: dataUsers.rows[0].photos,
+        public_id: dataUsers.rows[0].public_id,
       };
 
       if (result_up) {
@@ -289,7 +291,7 @@ const usersController = {
         console.log("Data yang akan direspons:", result.rows);
         return res
           .status(200)
-          .json(responseHandler(true, result.rows, "Success"));
+          .json(responseHandler(true, result.rows[0], "Success"));
       } else {
         console.log(`Couldn't find the data`);
         return res
