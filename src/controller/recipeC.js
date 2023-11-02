@@ -85,9 +85,9 @@ const recipeController = {
         data = result.rows;
         message = "Success!";
       } else {
-        statusCode = 404;
-        success = false;
-        data = null;
+        statusCode = 200;
+        success = true;
+        data = [];
         message = "Data not found";
       }
 
