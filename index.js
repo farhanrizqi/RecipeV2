@@ -15,6 +15,7 @@ const corsOptions = {
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Atur metode yang diizinkan
   credentials: true,
   optionsSuccessStatus: 200,
+  allowedHeaders: "Content-Type,Authorization",
 };
 app.use(cors(corsOptions));
 app.use(helmet);
