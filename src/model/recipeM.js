@@ -56,7 +56,8 @@ const putRecipeById = async (post) => {
     console.log("Model: Put recipe");
     const { title, img, ingredients, category_id, public_id, id } = post;
     Pool.query(
-      `UPDATE recipe SET title = '${title}', ingredients = '${ingredients}', category_id = ${category_id}, img = '${img}', public_id = '${public_id}' WHERE id = ${id} RETURNING *`,
+      "UPDATE recipe SET title = $1, ingredients = $2, category_id = $3, img = $4, public_id = $5 WHERE id = $6 RETURNING *",
+      [title, ingredients, category_id, img, public_id, id],
       (err, results) => {
         if (!err) {
           resolve(results);
