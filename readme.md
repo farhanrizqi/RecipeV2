@@ -48,8 +48,9 @@ This API was built with some technologies below:
 - Argon
 - Cors
 - Morgan
-- XSS
+- XSS-Clean
 - JWT
+- Pg-Pool
 - Cloudinary
 - Multer
 - Axios
@@ -69,7 +70,7 @@ Install Mama Recipe API with npm :
 - Go To Folder Repo
 
 ```
-  cd RecipeAPIV2.2
+  cd RecipeV2
 ```
 
 - Install Module
