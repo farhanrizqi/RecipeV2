@@ -31,7 +31,7 @@
 
 ## About The Project
 
-<p align="center">
+<p align="justify">
   Embark on a delightful gastronomic adventure using our Recipes Food API, driven by Node.js and Express.js. Explore a rich collection of delectable recipes, effortlessly delivered with swift and dependable data. Enhance your culinary exploration with our API that welcomes developers, making your cooking experience even more enjoyable.
 </p>
 
