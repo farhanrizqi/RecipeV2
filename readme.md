@@ -97,9 +97,9 @@ IMG_SECRET=
 
 ## Related Project
 
-:rocket: [`Mobile Mama Recipe`](https://github.com/farhanrizqi/RecipeMobileV1)
+[`Mama Recipe Mobile`](https://github.com/farhanrizqi/RecipeMobileV1)
 
-:rocket: [`Web Mama Recipe`](https://github.com/farhanrizqi/RecipeWEBV3)
+[`Mama Recipe Web`](https://github.com/farhanrizqi/RecipeWEBV3)
 
 <!-- :rocket: [`Install Mama Recipe Mobile APK`](https://drive.google.com/drive/folders/1Z31nBEuJ2Tj0zEAMYCUsL7hJyQfuGmIy) -->
 
